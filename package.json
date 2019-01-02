@@ -1,0 +1,29 @@
+{
+  "name": "static-mock",
+  "version": "1.0.4",
+  "description": "static mock server",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node ./app.js",
+    "test": "node ./test/index.test.js"
+  },
+  "keywords": [
+    "mock",
+    "nodejs"
+  ],
+  "author": "zhoushirong",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.16.4",
+    "express-fileupload": "^1.0.0",
+    "mockjs": "^1.0.1-beta3"
+  },
+  "devDependencies": {
+    "tape": "^4.9.1"
+  },
+  "directories": {
+    "test": "test"
+  }
+}
