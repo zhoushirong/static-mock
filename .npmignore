@@ -1,2 +1,10 @@
-node_modules
-.gitignore
+node_modules/
+.*.swp
+._*
+.DS_Store
+.git, hg , .svn, CVS 版本控制目录
+.npmrc
+.lock-wscript
+.wafpickle-*
+config.gypi
+npm-debug.log
