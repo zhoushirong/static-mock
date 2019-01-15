@@ -2,17 +2,17 @@ const fs = require('fs')
 const path = require('path')
 
 function getFPath(filedir, config) {
-  let reg1 = new RegExp(config.apiPath)
+  let reg1 = encodeURIComponent(config.apiPath)
   let prefix = ''
   if (config.prefix && config.prefix !== '/') {
     prefix = path.resolve('/', config.prefix)
   }
   
   // 处理前、后缀、windows 路径
-  let fpath = filedir
+  let fpath = encodeURIComponent(filedir)
   .replace(reg1, prefix)
   .replace(/\..*/, config.suffix)
-  .replace(/\\\\/g, '/')
+  fpath = decodeURIComponent(fpath).replace(/\\/g, '/')
 
   return fpath
 }
