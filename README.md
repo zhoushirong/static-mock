@@ -18,7 +18,6 @@ const mock = require('static-mock')
 const config = {
   port: '8589', // 端口
   suffix: '', // 接口后缀，如 ‘.html / .json’ 定义后缀之后访问：http://localhost:8587/test1.html
-  prefix: '/', // 接口前缀，定义后缀之后访问：http://localhost:8587/xxx/test1
   apiPath: path.join(__dirname, './mockApi') // 自定义 mock 文件位置 (需不为空的文件夹的绝对路径)
 }
 mock(config)

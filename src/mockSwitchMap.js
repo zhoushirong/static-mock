@@ -1,8 +1,7 @@
 
 const fs = require('fs')
 const join = require('path').join
-const config = require('./config')
-const apiPath = config.apiPath
+const config = {}
 const fileList = []
 
 /**
@@ -20,28 +19,21 @@ function findJsonFile(path){
     }
   })
 }
-findJsonFile(apiPath)
 
+module.exports = function (_config) {
+  Object.assign(config, _config)
+  findJsonFile(config.apiPath)
 
-module.exports = fileList.map(item => {
-  let configList
-  try {
-    configList = require(item).configList
-  } catch(e) {
-    // console.log(e)
-  }
-  return {
-    url: item.replace(apiPath, '').replace('.js', ''),
-    configList
-  }
-}).filter(item => item.configList)
-
-
-
-
-
-
-
-
-
-
+  return fileList.map(item => {
+    let configList
+    try {
+      configList = require(item).configList
+    } catch(e) {
+      // console.log(e)
+    }
+    return {
+      url: item.replace(config.apiPath, '').replace('.js', ''),
+      configList
+    }
+  }).filter(item => item.configList)
+}

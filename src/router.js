@@ -9,7 +9,7 @@ const _config = {}
 let $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
 
 router.post('/mock-switch/list', async (ctx, next) => {
-  ctx.body = mockSwitchMapData.map(item => {
+  ctx.body = mockSwitchMapData(_config).map(item => {
     const cache = $config[item.url]
     if (cache) { // 如果缓存中有数据，则用缓存的数据
       item.configList = cache
@@ -38,23 +38,28 @@ router.post('/mock-switch/change', async (ctx, next) => {
  */
 function getResponseData(ctx, mockApiUrl, isSwitch) {
   const mockData = require(`${_config.apiPath}${mockApiUrl}.js`)
-  let configList = mockData.configList
+  let configList
   const params = ctx.method.toLowerCase() === 'get' ? ctx.query : ctx.request.body
+  
+  if ($config.hasOwnProperty(mockApiUrl)) { // 有缓存则取缓存
+    configList = $config[mockApiUrl]
+  } else {
+    configList = mockData.configList
+  }
 
   if (isSwitch) { // 开关接口 合并请求开关的数据，并缓存
     const { key, value } = ctx.request.body
     configList = tools.combineNewConfig(key, value, configList)
     $config[mockApiUrl] = configList // 缓存配置
-  } else if ($config.hasOwnProperty(mockApiUrl)) { // 非开关接口，有缓存则取缓存开关数据
-    configList = $config[mockApiUrl]
   }
-  if (configList) { // 设置缓存
+
+  if (configList) { // 返回有configList 和 configData 的数据
     return mockData.configData(tools.getConfig(configList), params)
   }
-  if (typeof mockData === 'function') {
-    return mockData(params) // 不需要开关控制的接口
+  if (typeof mockData === 'function') { // 返回 function 接口的数据
+    return mockData(params)
   }
-  return mockData
+  return mockData // 返回 JSON 数据
 }
 
 function writeCookie(ctx, data) {
