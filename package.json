@@ -1,6 +1,6 @@
 {
   "name": "static-mock",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "static mock server",
   "main": "./src/index.js",
   "scripts": {
@@ -15,16 +15,19 @@
   "license": "MIT",
   "repository": "zhoushirong/static-mock",
   "dependencies": {
-    "body-parser": "^1.18.3",
     "cookie-parser": "^1.4.3",
-    "express": "^4.16.4",
-    "express-fileupload": "^1.0.0",
-    "mockjs": "^1.0.1-beta3"
-  },
-  "devDependencies": {
-    "tape": "^4.9.1"
+    "koa": "^2.11.0",
+    "koa-body": "^4.1.1",
+    "koa-favicon": "^2.1.0",
+    "koa-router": "^8.0.8",
+    "koa-send": "^5.0.0",
+    "mockjs": "^1.1.0"
   },
   "directories": {
     "test": "test"
+  },
+  "devDependencies": {
+    "tap": "^14.10.7",
+    "tape": "^4.13.2"
   }
 }

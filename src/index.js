@@ -1,54 +1,27 @@
-const express = require('express')
-// const https = require('https')
-const http = require('http')
-const fileUpload = require('express-fileupload')
-const bodyParser = require('body-parser')
-const cookiePareser = require('cookie-parser')
-const getMockFileObj = require('./get-mock-file-obj')
+const Koa = require('koa')
+const favicon = require('koa-favicon');
+const bodyParser = require('koa-body')
+const router = require('./router')
+const config = require('./config')
+const app = new Koa()
 
-let defConfig = require('./config')
+app.use(favicon(__dirname + '/favicon.ico'));
+app.use(
+  bodyParser({ 
+    multipart: true,
+    formidable: { maxFileSize: 200 * 1024 * 1024 }
+  })
+)
 
-function init(config) {
-  config = Object.assign({}, defConfig, config)
-  const app = express()
+module.exports = (_config) => {
+  Object.assign(config, _config)
+  router(app, config)
 
-  app.use(cookiePareser())
-  // 文件上传
-  app.use(fileUpload({
-    limits: {
-      fileSize: 50 * 1024 * 1024
-    },
-  }))
-  app.use(bodyParser.urlencoded({ extended: true }))
-
-  const apis = getMockFileObj(config)
-  for (let i in apis) {
-    app.get(i, function (req, res) {
-      writeCookie(res, apis[i])
-      res.send(apis[i]);
-    });
-    
-    // POST method route
-    app.post(i, function (req, res) {
-      writeCookie(res, apis[i])
-      res.send(apis[i]);
-    });
-  }
-
-  function writeCookie(res, api) {
-    let __cookie__ = api['__cookie__']
-    if (__cookie__) {
-      res.cookie(__cookie__['key'], __cookie__['value'],
-      { 
-        expires: __cookie__['expires'] || new Date(Date.now() + 10000), 
-        httpOnly: __cookie__['httpOnly'] || false 
-      })
-    }
-  }
-
-  console.log(`----->: now mock api is listening port: ${ config.port }`)
-  http.createServer(app).listen(config.port)
-  // https.createServer({}, app).listen(443)
+  app.on('error', (err, ctx) => {
+    console.log('server error', err, ctx)
+  })
+  
+  // 注意：这里的端口要和webpack里devServer的端口对应
+  console.log('Project proxy is running at', `port:${config.port}`)
+  app.listen(config.port)
 }
-
-module.exports = init
