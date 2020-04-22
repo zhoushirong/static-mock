@@ -49,8 +49,8 @@
     </el-row>
   </div>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-  <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
-  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="//unpkg.com/vue/dist/vue.min.js"></script>
+  <script src="//unpkg.com/element-ui/lib/index.js"></script>
   <script type="text/javascript">
     new window.Vue({
       el: '#app',
@@ -60,7 +60,7 @@
           checkboxType: {},
           radioType: {},
           valueType: {},
-          selectUrlValue: ''
+          selectUrlValue: location.hash.split('#')[1],
         }
       },
       filters: {
@@ -78,6 +78,7 @@
           if (!this.selectUrlValue) {
             return this.urlConfigList
           }
+          location.hash = this.selectUrlValue
           return this.urlConfigList.filter(item => item.url === this.selectUrlValue)
         },
       },
@@ -118,8 +119,7 @@
       },
       methods: {
         changeHandle(url, key, value) {
-          console.log(url, key, value)
-          window.axios.post('/mock-switch/change', {
+          window.axios.post('/mock-switch', {
             url,
             key,
             value,

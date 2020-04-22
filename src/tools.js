@@ -46,7 +46,7 @@ function combineNewConfig(key, value, configList) {
       }
       return item
     })
-  } else if (typeof value === 'string') {
+  } else if (typeof configList[key] === 'string') {
     config[key] = value
   } else {
     for (let i in config[key]) {

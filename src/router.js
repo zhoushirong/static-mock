@@ -3,13 +3,19 @@ const send = require('koa-send')
 const Router = require('koa-router')
 const router = new Router()
 const tools = require('./tools')
+const mockSwitchMapData = require('./mockSwitchMap')
 
 const _config = {}
-const $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
+let $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
 
 router.post('/mock-switch/list', async (ctx, next) => {
-  const mockSwitchMap = await require('./mockSwitchMap')
-  ctx.body = mockSwitchMap
+  ctx.body = mockSwitchMapData.map(item => {
+    const cache = $config[item.url]
+    if (cache) { // 如果缓存中有数据，则用缓存的数据
+      item.configList = cache
+    }
+    return item
+  })
   await next()
 })
 
@@ -35,21 +41,20 @@ function getResponseData(ctx, mockApiUrl, isSwitch) {
   let configList = mockData.configList
   const params = ctx.method.toLowerCase() === 'get' ? ctx.query : ctx.request.body
 
-  if (!isSwitch && $config.hasOwnProperty(mockApiUrl)) { // 如果请求过来的数据之前开关设置过，则取开关的缓存
-    return $config[mockApiUrl](params)
-  }
-  if (isSwitch) { // 开关接口直接合并请求数据
+  if (isSwitch) { // 开关接口 合并请求开关的数据，并缓存
     const { key, value } = ctx.request.body
     configList = tools.combineNewConfig(key, value, configList)
+    $config[mockApiUrl] = configList // 缓存配置
+  } else if ($config.hasOwnProperty(mockApiUrl)) { // 非开关接口，有缓存则取缓存开关数据
+    configList = $config[mockApiUrl]
   }
   if (configList) { // 设置缓存
-    $config[mockApiUrl] = (params) => mockData.configData(tools.getConfig(configList), params)
-  } else if (typeof mockData === 'function') {
-    $config[mockApiUrl] = (params) => mockData(params) // 不需要开关控制的接口
-  } else {
-    $config[mockApiUrl] = () => mockData
+    return mockData.configData(tools.getConfig(configList), params)
   }
-  return $config[mockApiUrl](params)
+  if (typeof mockData === 'function') {
+    return mockData(params) // 不需要开关控制的接口
+  }
+  return mockData
 }
 
 function writeCookie(ctx, data) {
