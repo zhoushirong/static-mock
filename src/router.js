@@ -5,11 +5,11 @@ const router = new Router()
 const tools = require('./tools')
 const mockSwitchMapData = require('./mockSwitchMap')
 
-const _config = {}
+const config = {}
 let $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
 
 router.post('/mock-switch/list', async (ctx, next) => {
-  ctx.body = mockSwitchMapData(_config).map(item => {
+  ctx.body = mockSwitchMapData(config).map(item => {
     const cache = $config[item.url]
     if (cache) { // 如果缓存中有数据，则用缓存的数据
       item.configList = cache
@@ -37,7 +37,7 @@ router.post('/mock-switch/change', async (ctx, next) => {
  * @param {*} isSwitch 是否是开关调用， 默认 false
  */
 function getResponseData(ctx, mockApiUrl, isSwitch) {
-  const mockData = require(`${_config.apiPath}${mockApiUrl}.js`)
+  const mockData = require(`${config.apiPath}${mockApiUrl}.js`)
   let configList
   const params = ctx.method.toLowerCase() === 'get' ? ctx.query : ctx.request.body
   
@@ -62,8 +62,20 @@ function getResponseData(ctx, mockApiUrl, isSwitch) {
   return mockData // 返回 JSON 数据
 }
 
-function writeCookie(ctx, data) {
-  const __cookie__ = data['__cookie__']
+/**
+ * 路由前置处理
+ * @param {*} ctx 
+ */
+function beforeRouter(ctx) {
+  ctx = config.beforeRouter(ctx)
+  ctx.path = ctx.path.replace(new RegExp(`${config.suffix}`), '')
+}
+
+function afterRouter(ctx) {
+  if (!ctx.body) {
+    return
+  }
+  const __cookie__ = ctx.body['__cookie__']
   if (!__cookie__) {
     return
   }
@@ -73,12 +85,8 @@ function writeCookie(ctx, data) {
   })
 }
 
-function dealSpecialPath(ctx) {
-  return ctx.path.replace(new RegExp(`${_config.suffix}`), '')
-}
-
-module.exports = ((app, config) => {
-  Object.assign(_config, config)
+module.exports = ((app, _config) => {
+  Object.assign(config, _config)
 
   app.use(router.routes())
   app.use(router.allowedMethods())
@@ -87,9 +95,9 @@ module.exports = ((app, config) => {
     if (ctx.path.startsWith('/mock-switch')) { // 此处仅处理 非开关 的路由
       return await next()
     }
-    const url = dealSpecialPath(ctx)
-    ctx.body = getResponseData(ctx, url)
-    writeCookie(ctx, ctx.body)
+    beforeRouter(ctx)
+    ctx.body = getResponseData(ctx, ctx.path)
+    afterRouter(ctx)
     return await next()
   })
 
