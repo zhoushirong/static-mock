@@ -23,7 +23,6 @@ module.exports = async function(method, url, params, agentUrl, agentHeaders) {
       'content-type': 'application/json',
     }, agentHeaders)
   })
-  console.log(reqParams, '---')
   // 发起请求
   return await request(reqParams, (err, response, body) => {
     if (err) {
