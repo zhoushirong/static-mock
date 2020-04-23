@@ -2,7 +2,7 @@
 const fs = require('fs')
 const join = require('path').join
 const config = {}
-const fileList = []
+let fileList = []
 
 /**
  * 遍历文件夹下面的所有文件，获取文件路径
@@ -22,8 +22,8 @@ function findJsonFile(path){
 
 module.exports = function (_config) {
   Object.assign(config, _config)
+  fileList = []
   findJsonFile(config.apiPath)
-
   return fileList.map(item => {
     let configList
     try {
