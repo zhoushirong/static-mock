@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Mock Switch</title>
-  <!-- <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> -->
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
   <link rel="stylesheet" href="./static/element-ui.css">
 </head>
 
@@ -14,7 +14,7 @@
     <el-row>
       <el-col :span="20" :offset="2">
         <h1>接口管理</h1>
-        <el-form :inline="true">
+        <el-form :model="ruleForm" :rules="rules" :inline="true" ref="ruleForm">
           <el-form-item label="接口过滤显示">
             <el-select v-model="selectUrlValue" placeholder="请选择">
               <el-option
@@ -25,14 +25,14 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="接口代理域名">
-            <el-input :disabled="useAgent" v-model="agentUrl" placeholder="https://www.163.com"></el-input>
+          <el-form-item label="接口代理域名" prop="agentUrl">
+            <el-input type="text" :disabled="ruleForm.useAgent" v-model="ruleForm.agentUrl" placeholder="https://www.163.com"></el-input>
           </el-form-item>
-          <el-form-item label="接口代理参数">
-            <el-input :disabled="useAgent" v-model="agentHeaders" placeholder="agent headers"></el-input>
+          <el-form-item label="接口代理参数" prop="agentHeaders">
+            <el-input :disabled="ruleForm.useAgent" v-model="ruleForm.agentHeaders" placeholder="agent headers"></el-input>
           </el-form-item>
           <el-form-item>
-            <el-checkbox v-model="useAgent" @change="useAgentEvent">接口代理</el-checkbox>
+            <el-checkbox v-model="ruleForm.useAgent" @change="useAgentEvent">接口代理</el-checkbox>
           </el-form-item>
         </el-form>
         <el-table :data="tableData" style="width: 100%" border>
@@ -45,7 +45,7 @@
                     <el-checkbox-group v-model="checkboxType[scope.row.url + configItemKey]" v-if="configItem instanceof Array" @change="changeHandle(scope.row.url, configItemKey, checkboxType[scope.row.url + configItemKey])">
                       <el-checkbox v-for="item in configItem" :label="item|getItemName" name="item"></el-checkbox>
                     </el-checkbox-group>
-                    <el-input v-else-if="typeof configItem === 'string'" v-model="valueType[scope.row.url + configItemKey]" @change="changeHandle(scope.row.url, configItemKey, valueType[scope.row.url + configItemKey])"></el-input>
+                    <el-input v-else-if="typeof configItem === 'string'" v-model="valueType[scope.row.url + configItemKey]" @change="changeHandle(scope.row.url, configItemKey, valueType[scope.row.url + configItemKey])" style="width:300px"></el-input>
                     <el-radio-group v-model="radioType[scope.row.url + configItemKey]" v-else @change="changeHandle(scope.row.url, configItemKey, radioType[scope.row.url + configItemKey])">
                       <el-radio v-for="(item, radioKey) in configItem" :label="radioKey"></el-radio>
                     </el-checkbox-group>
@@ -66,14 +66,48 @@
       el: '#app',
       data() {
         return {
-          useAgent: false,
-          agentUrl: '', // https://global-devjd.epay.163.com
-          agentHeaders: '', // { "Cookie": "JSESSIONID=A4C1A5F2F73E186DAC432BB78113C3FA;" }
+          ruleForm: {
+            agentUrl: '', // https://global-devjd.epay.163.com
+            agentHeaders: '', // { "Cookie": "JSESSIONID=A4C1A5F2F73E186DAC432BB78113C3FA;" }
+            useAgent: false,
+          },
           urlConfigList: [],
           checkboxType: {},
           radioType: {},
           valueType: {},
           selectUrlValue: location.hash.split('#')[1],
+          rules: {
+            agentUrl: [{
+              trigger: 'blur',
+              validator: (rule, value, callback) => {
+                if (value && !/^http/.test(value)) {
+                  return callback(new Error('请输入正确url'));
+                }
+                return callback()
+              }
+            }],
+            agentHeaders: [{
+              trigger: 'blur',
+              validator: (rule, value, callback) => {
+                let checkError = false
+                if (!value) {
+                  return callback()
+                }
+                try {
+                  agentHeaders = JSON.parse(this.ruleForm.agentHeaders)
+                  if (typeof agentHeaders !== 'object') {
+                    checkError = true
+                  }
+                } catch(e) {
+                  checkError = true
+                }
+                if (!checkError) {
+                  return callback()
+                }
+                return callback(new Error('agentHeaders 必须为JSON'))
+              }
+            }]
+          }
         }
       },
       filters: {
@@ -96,41 +130,44 @@
         },
       },
       mounted() {
-        window.axios.post('/mock-switch/list').then(res => {
-          res.data.forEach(item => {
-            const listObj = item.configList
-            const url = item.url
+        this.initPageData()
+      },
+      methods: {
+        initPageData() {
+          window.axios.post('/mock-switch/list').then(res => {
+            res.data.forEach(item => {
+              const listObj = item.configList
+              const url = item.url
 
-            for (let key in listObj) {
-              const listObjKey = listObj[key]
-              const itemTypeKey = url + key
-              if (listObjKey instanceof Array) {
-                if (!this.checkboxType[itemTypeKey]) {
-                  this.$set(this.checkboxType, itemTypeKey, [])
-                }
-                listObjKey.forEach(list => {
-                  for (let checkboxItem in list) {
-                    if (list[checkboxItem]) {
-                      this.checkboxType[itemTypeKey].push(checkboxItem)
-                    }
-                    list = checkboxItem
+              for (let key in listObj) {
+                const listObjKey = listObj[key]
+                const itemTypeKey = url + key
+                if (listObjKey instanceof Array) {
+                  if (!this.checkboxType[itemTypeKey]) {
+                    this.$set(this.checkboxType, itemTypeKey, [])
                   }
-                })
-              } else if (typeof listObjKey === 'string') {
-                this.$set(this.valueType, itemTypeKey, listObjKey)
-              }else {
-                for (let radioItem in listObjKey) {
-                  if (listObjKey[radioItem]) {
-                    this.$set(this.radioType, itemTypeKey, radioItem)
+                  listObjKey.forEach(list => {
+                    for (let checkboxItem in list) {
+                      if (list[checkboxItem]) {
+                        this.checkboxType[itemTypeKey].push(checkboxItem)
+                      }
+                      list = checkboxItem
+                    }
+                  })
+                } else if (typeof listObjKey === 'string') {
+                  this.$set(this.valueType, itemTypeKey, listObjKey)
+                } else {
+                  for (let radioItem in listObjKey) {
+                    if (listObjKey[radioItem]) {
+                      this.$set(this.radioType, itemTypeKey, radioItem)
+                    }
                   }
                 }
               }
-            }
+            })
+            this.urlConfigList = res.data
           })
-          this.urlConfigList = res.data
-        })
-      },
-      methods: {
+        },
         changeHandle(url, key, value) {
           window.axios.post('/mock-switch/change', {
             url,
@@ -138,30 +175,23 @@
             value,
           })
         },
-        showFormatErr() {
-          return this.$message.error('agentHeaders 必须为JSON')
-        },
         useAgentEvent() {
-          let url = this.agentUrl
-          let agentHeaders = ''
-          if (this.agentHeaders) {
-            try {
-              agentHeaders = JSON.parse(this.agentHeaders)
-            } catch(e) {
-              return this.showFormatErr()
+          this.$refs.ruleForm.validate(valid => {
+            if (!valid) {
+              return
             }
-            if (typeof agentHeaders === 'string') {
-              return this.showFormatErr()
+            let url = this.ruleForm.agentUrl
+            let agentHeaders = ''
+            if (!this.ruleForm.useAgent) {
+              agentHeaders = ''
+              url = ''
+            } else if (this.ruleForm.agentHeaders) {
+              agentHeaders = JSON.parse(this.ruleForm.agentHeaders)
             }
-          }
-          
-          if (!this.useAgent) {
-            agentHeaders = ''
-            url = ''
-          }
-          window.axios.post('/mock-switch/agent', {
-            url,
-            agentHeaders,
+            window.axios.post('/mock-switch/agent', {
+              url,
+              agentHeaders,
+            })
           })
         }
       }
