@@ -4,7 +4,10 @@ const Router = require('koa-router')
 const router = new Router()
 const tools = require('./tools')
 const mockSwitchMapData = require('./mockSwitchMap')
+const getAgentResponseData = require('./getAgentResponseData')
 
+let agentUrl = ''
+let agentHeaders = ''
 const config = {}
 let $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
 
@@ -28,6 +31,19 @@ router.get('/mock-switch/index', async (ctx, next) => {
 
 router.post('/mock-switch/change', async (ctx, next) => {
   ctx.body = getResponseData(ctx, ctx.request.body.url, true)
+  await next()
+})
+
+router.post('/mock-switch/agent', async (ctx, next) => {
+  agentUrl = ctx.request.body.url
+  agentHeaders = ctx.request.body.agentHeaders
+  ctx.body = {
+    status: 200,
+    result: {
+      agentUrl,
+      agentHeaders
+    }
+  }
   await next()
 })
 
@@ -67,8 +83,10 @@ function getResponseData(ctx, mockApiUrl, isSwitch) {
  * @param {*} ctx 
  */
 function beforeRouter(ctx) {
-  ctx = config.beforeRouter(ctx)
-  ctx.path = ctx.path.replace(new RegExp(`${config.suffix}`), '')
+  ctx = config.beforeRouter(ctx, agentUrl, agentHeaders)
+  if (!agentUrl) {
+    ctx.path = ctx.path.replace(new RegExp(`${config.suffix}`), '')
+  }
 }
 
 function afterRouter(ctx) {
@@ -96,7 +114,12 @@ module.exports = ((app, _config) => {
       return await next()
     }
     beforeRouter(ctx)
-    ctx.body = getResponseData(ctx, ctx.path)
+    if (!agentUrl) {
+      ctx.body = getResponseData(ctx, ctx.path)
+    } else {
+      const params = ctx.method.toLowerCase() === 'get' ? ctx.query : ctx.request.body
+      ctx.body = await getAgentResponseData(ctx.method, ctx.path, params, agentUrl, agentHeaders)
+    }
     afterRouter(ctx)
     return await next()
   })

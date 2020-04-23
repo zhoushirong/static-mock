@@ -1,11 +1,14 @@
 const Koa = require('koa')
-const favicon = require('koa-favicon');
+const favicon = require('koa-favicon')
 const bodyParser = require('koa-body')
+const path = require('path')
+const serve = require('koa-static-prefix')
 const router = require('./router')
 const config = require('./config')
 const app = new Koa()
 
 app.use(favicon(__dirname + '/favicon.ico'));
+app.use(serve(path.join(__dirname, './static'), { pathPrefix:'/mock-switch/static' })) // 针对static
 app.use(
   bodyParser({ 
     multipart: true,
