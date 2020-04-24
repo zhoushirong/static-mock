@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Mock Switch</title>
+  <title>Mock 接口数据控制台</title>
   <link rel="stylesheet" href="./static/element-ui.css">
 </head>
 
@@ -12,10 +12,11 @@
   <div id="app">
     <el-row>
       <el-col :span="20" :offset="2">
-        <h1>接口管理</h1>
+        <h3>接口管理<p style="font-size:12px; font-weight:normal; display: inline-block;">(开启接口代理可直接访问代理域名的数据，如需登录态，可传入登录之后的 cookie)</p></h3>
+        
         <el-form :model="ruleForm" :rules="rules" :inline="true" ref="ruleForm">
           <el-form-item label="接口过滤显示">
-            <el-select v-model="selectUrlValue" placeholder="请选择">
+            <el-select v-model="selectUrlValue" placeholder="请选择" clearable filterable>
               <el-option
                 v-for="item in options"
                 :key="item.value"
@@ -24,11 +25,11 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="接口代理域名" prop="agentUrl">
-            <el-input type="text" :disabled="ruleForm.useAgent" v-model="ruleForm.agentUrl" placeholder="https://www.163.com"></el-input>
+          <el-form-item label="代理域名" prop="agentUrl">
+            <el-autocomplete :disabled="ruleForm.useAgent" :fetch-suggestions="useAgentQuerySearch" v-model="ruleForm.agentUrl" placeholder="https://www.163.com"></el-autocomplete>
           </el-form-item>
-          <el-form-item label="接口代理参数" prop="agentHeaders">
-            <el-input :disabled="ruleForm.useAgent" v-model="ruleForm.agentHeaders" placeholder="agent headers"></el-input>
+          <el-form-item label="代理参数" prop="agentHeaders">
+            <el-autocomplete :disabled="ruleForm.useAgent" :fetch-suggestions="agentHeadersQuerySearch" v-model="ruleForm.agentHeaders" placeholder='{ "Cookie": "ID=A4BA;" }'></el-autocomplete>
           </el-form-item>
           <el-form-item>
             <el-checkbox v-model="ruleForm.useAgent" @change="useAgentEvent">接口代理</el-checkbox>
@@ -60,10 +61,36 @@
   <script src="./static/axios.js"></script>
   <script src="./static/vue.js"></script>
   <script src="./static/element-ui.js"></script>
+
   <script type="text/javascript">
     new window.Vue({
       el: '#app',
       data() {
+        const agentUrlValidator = (rule, value, callback) => {
+          if (value && !/^http/.test(value)) {
+            return callback(new Error('请输入正确url'));
+          }
+          return callback()
+        }
+        const agentHeadersValidator = (rule, value, callback) => {
+          let checkError = false
+          if (!value) {
+            return callback()
+          }
+          try {
+            agentHeaders = JSON.parse(this.ruleForm.agentHeaders)
+            if (typeof agentHeaders !== 'object') {
+              checkError = true
+            }
+          } catch(e) {
+            checkError = true
+          }
+          if (!checkError) {
+            return callback()
+          }
+          return callback(new Error('代理参数必须为JSON格式'))
+        }
+
         return {
           ruleForm: {
             agentUrl: '', // https://global-devjd.epay.163.com
@@ -78,55 +105,35 @@
           rules: {
             agentUrl: [{
               trigger: 'blur',
-              validator: (rule, value, callback) => {
-                if (value && !/^http/.test(value)) {
-                  return callback(new Error('请输入正确url'));
-                }
-                return callback()
-              }
+              validator: agentUrlValidator
             }],
             agentHeaders: [{
               trigger: 'blur',
-              validator: (rule, value, callback) => {
-                let checkError = false
-                if (!value) {
-                  return callback()
-                }
-                try {
-                  agentHeaders = JSON.parse(this.ruleForm.agentHeaders)
-                  if (typeof agentHeaders !== 'object') {
-                    checkError = true
-                  }
-                } catch(e) {
-                  checkError = true
-                }
-                if (!checkError) {
-                  return callback()
-                }
-                return callback(new Error('agentHeaders 必须为JSON'))
-              }
+              validator: agentHeadersValidator
             }]
           }
         }
       },
       filters: {
         getItemName(val) {
-          for (let i in val) {
-            return i
-          }
+          return Object.keys(val)[0]
         }
       },
       computed: {
         options() {
-          return [{ label: 'All', value: '' }].concat(this.urlConfigList.map(item => ({ label: item.url, value: item.url })))
+          return this.urlConfigList.map(item => ({ label: item.url, value: item.url }))
         },
         tableData() {
           if (!this.selectUrlValue) {
             return this.urlConfigList
           }
-          location.hash = this.selectUrlValue
           return this.urlConfigList.filter(item => item.url === this.selectUrlValue)
         },
+      },
+      watch: {
+        selectUrlValue(val) {
+          location.hash = val || ''
+        }
       },
       mounted() {
         this.initPageData()
@@ -185,13 +192,41 @@
               agentHeaders = ''
               url = ''
             } else if (this.ruleForm.agentHeaders) {
+              if (!this.ruleForm.agentUrl) {
+                return this.$message.warning('代理Url为空')
+              }
               agentHeaders = JSON.parse(this.ruleForm.agentHeaders)
+              this.setSearchResult('useAgentQuerySearchResult', url)
+              this.setSearchResult('agentHeadersQuerySearchResult', this.ruleForm.agentHeaders)
             }
             window.axios.post('/mock-switch/agent', {
               url,
               agentHeaders,
             })
           })
+        },
+        setSearchResult(key, value) {
+          const oldLocalData = this.getSearchResult(key)
+          if (oldLocalData.includes(value)) {
+            return
+          }
+          oldLocalData.push(value)
+          sessionStorage.setItem(key, JSON.stringify(oldLocalData))
+        },
+        getSearchResult(key) {
+          return JSON.parse(sessionStorage.getItem(key) || '[]')
+        },
+        useAgentQuerySearch(queryString, callback) {
+          callback(this.formatQuerySearchData('useAgentQuerySearchResult'))
+        },
+        agentHeadersQuerySearch(queryString, callback) {
+          callback(this.formatQuerySearchData('agentHeadersQuerySearchResult'))
+        },
+        formatQuerySearchData(key) {
+          const data = this.getSearchResult(key)
+          return data.map(item => ({
+            value: item
+          }))
         }
       }
     })

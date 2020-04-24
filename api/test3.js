@@ -1,6 +1,5 @@
 /**
  * 测试接口2
- * function 类型的数据
  */
 let Mock = require('mockjs')
 const configList = {

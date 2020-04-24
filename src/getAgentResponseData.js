@@ -2,7 +2,7 @@ const request = require('request')
 
 module.exports = async function(method, url, params, agentUrl, agentHeaders) {
   if (agentHeaders && typeof agentHeaders === 'string') {
-    throw('agentHeaders must JSON parse!')
+    throw('The proxy parameter must be json!')
   }
   if (!/:\/\//.test(url)) {
     url = agentUrl + url
