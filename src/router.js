@@ -117,8 +117,7 @@ module.exports = ((app, _config) => {
     if (!agentUrl) {
       ctx.body = getResponseData(ctx, ctx.path)
     } else {
-      const params = ctx.method.toLowerCase() === 'get' ? ctx.query : ctx.request.body
-      ctx.body = await getAgentResponseData(ctx.method, ctx.path, params, agentUrl, agentHeaders)
+      ctx.body = await getAgentResponseData(ctx, agentUrl, agentHeaders)
     }
     afterRouter(ctx)
     return await next()

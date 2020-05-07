@@ -35,8 +35,9 @@ function combineNewConfig(key, value, configList) {
   if (!key) {
     return config
   }
+  const configValue = config[key]
   if (value instanceof Array) {
-    config[key] = config[key].map(item => {
+    configValue = configValue.map(item => {
       for (let i in item) {
         if (value.includes(i)) {
           item[i] = true
@@ -46,18 +47,21 @@ function combineNewConfig(key, value, configList) {
       }
       return item
     })
-  } else if (typeof configList[key] === 'string') {
-    config[key] = value
-  } else {
-    for (let i in config[key]) {
-      if (i === value) {
-        config[key][i] = true
-      } else {
-        config[key][i] = false
-      }
-    }
+    return config
   }
 
+  if (typeof configList[key] === 'string') {
+    configValue = value
+    return config
+  }
+  
+  for (let i in configValue) {
+    if (i === value) {
+      configValue[i] = true
+    } else {
+      configValue[i] = false
+    }
+  }
   return config
 }
 
