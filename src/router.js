@@ -72,6 +72,9 @@ function getResponseData(ctx, mockApiUrl, isSwitch) {
   if (configList) { // 返回有configList 和 configData 的数据
     return mockData.configData(tools.getConfig(configList), params)
   }
+  if (configList !== undefined) {
+    return mockData.configData(null, params)
+  }
   if (typeof mockData === 'function') { // 返回 function 接口的数据
     return mockData(params)
   }
