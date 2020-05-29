@@ -45,7 +45,6 @@ module.exports = async function(ctx, agentUrl, agentHeaders) {
     formData.append('file', file)
     reqParams.body = formData
   }
-  console.log(reqParams)
   // 发起请求
   return await request(reqParams, (err) => {
     if (err) {

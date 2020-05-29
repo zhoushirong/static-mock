@@ -35,7 +35,7 @@ function combineNewConfig(key, value, configList) {
   if (!key) {
     return config
   }
-  const configValue = config[key]
+  let configValue = config[key]
   if (value instanceof Array) {
     configValue = configValue.map(item => {
       for (let i in item) {
@@ -49,9 +49,8 @@ function combineNewConfig(key, value, configList) {
     })
     return config
   }
-
   if (typeof configList[key] === 'string') {
-    configValue = value
+    config[key] = value
     return config
   }
   
