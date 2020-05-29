@@ -11,6 +11,19 @@ let agentHeaders = ''
 const config = {}
 let $config = {} // 设置一个cache，让 /mock-switch 设置过的数据能够直接给页面
 
+router.post('/mock-switch/config', async (ctx, next) => {
+  ctx.body = {
+    proxyUrlList: config.proxyUrlList,
+    proxyParamsList: config.proxyParamsList,
+    agent: {
+      agentUrl,
+      agentHeaders: agentUrl ? JSON.stringify(agentHeaders) : '',
+      useAgent: !!agentUrl
+    },
+  }
+  await next()
+})
+
 router.post('/mock-switch/list', async (ctx, next) => {
   ctx.body = mockSwitchMapData(config).map(item => {
     const cache = $config[item.url]

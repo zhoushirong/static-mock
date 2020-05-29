@@ -9,54 +9,51 @@
 </head>
 
 <body>
-  <div id="app">
-    <el-row>
-      <el-col :span="20" :offset="2">
-        <h3>接口管理<p style="font-size:12px; font-weight:normal; display: inline-block;">(开启接口代理可直接访问代理域名的数据，如需登录态，可传入登录之后的 cookie)</p></h3>
-        
-        <el-form :model="ruleForm" :rules="rules" :inline="true" ref="ruleForm">
-          <el-form-item label="接口过滤显示">
-            <el-select v-model="selectUrlValue" placeholder="请选择" clearable filterable>
-              <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value">
-              </el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="代理域名" prop="agentUrl">
-            <el-autocomplete :disabled="ruleForm.useAgent" :fetch-suggestions="useAgentQuerySearch" v-model="ruleForm.agentUrl" placeholder="https://www.163.com"></el-autocomplete>
-          </el-form-item>
-          <el-form-item label="代理参数" prop="agentHeaders">
-            <el-autocomplete :disabled="ruleForm.useAgent" :fetch-suggestions="agentHeadersQuerySearch" v-model="ruleForm.agentHeaders" placeholder='{ "Cookie": "ID=A4BA;" }'></el-autocomplete>
-          </el-form-item>
-          <el-form-item>
-            <el-checkbox v-model="ruleForm.useAgent" @change="useAgentEvent">接口代理</el-checkbox>
-          </el-form-item>
-        </el-form>
-        <el-table :data="tableData" style="width: 100%" border>
-          <el-table-column prop="url" label="接口" width="200"></el-table-column>
-          <el-table-column prop="configList" label="选项">
-            <template slot-scope="scope">
-              <el-form>
-                <div v-for="(configItem, configItemKey) in scope.row.configList" :label="configItemKey">
-                  <el-form-item :label="configItemKey">
-                    <el-checkbox-group v-model="checkboxType[scope.row.url + configItemKey]" v-if="configItem instanceof Array" @change="changeHandle(scope.row.url, configItemKey, checkboxType[scope.row.url + configItemKey])">
-                      <el-checkbox v-for="item in configItem" :label="item|getItemName" name="item"></el-checkbox>
-                    </el-checkbox-group>
-                    <el-input v-else-if="typeof configItem === 'string'" v-model="valueType[scope.row.url + configItemKey]" @change="changeHandle(scope.row.url, configItemKey, valueType[scope.row.url + configItemKey])" style="width:300px"></el-input>
-                    <el-radio-group v-model="radioType[scope.row.url + configItemKey]" v-else @change="changeHandle(scope.row.url, configItemKey, radioType[scope.row.url + configItemKey])">
-                      <el-radio v-for="(item, radioKey) in configItem" :label="radioKey"></el-radio>
-                    </el-checkbox-group>
-                  </el-form-item>
-                </div>
-              </el-form>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-col>
-    </el-row>
+  <div id="app" class="page-layout">
+    <h3>接口管理<p style="margin-left: 10px; font-size:12px; font-weight:normal; display: inline-block; color: #666;">(开启接口代理可直接访问代理域名的数据，如需登录态，可传入登录之后的 cookie)</p></h3>
+    <el-form :model="ruleForm" :rules="rules" :inline="true" ref="ruleForm" label-width="70px" label-position="right">
+      <el-row>
+        <el-form-item label="代理域名" prop="agentUrl">
+          <el-autocomplete class="self-column" :disabled="ruleForm.useAgent" :fetch-suggestions="useAgentQuerySearch" v-model="ruleForm.agentUrl" placeholder="https://www.163.com"></el-autocomplete>
+        </el-form-item>
+        <el-form-item label="代理参数" prop="agentHeaders">
+          <el-autocomplete class="self-column-params" :disabled="ruleForm.useAgent" :fetch-suggestions="agentHeadersQuerySearch" v-model="ruleForm.agentHeaders" placeholder='{ "Cookie": "AYFJDFDF66357GHJ76A4BA;" }'></el-autocomplete>
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="ruleForm.useAgent" @change="useAgentEvent">接口代理</el-checkbox>
+        </el-form-item>
+      </el-row>
+      <el-row>
+        <el-form-item label="接口筛选">
+          <el-select class="self-column" v-model="selectUrlValue" placeholder="请选择" clearable filterable>
+            <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="updatePage">更新数据</el-button>
+        </el-form-item>
+      </el-row>
+    </el-form>
+    <el-table :data="tableData" style="width: 100%" border>
+      <el-table-column prop="url" label="接口URL" width="200"></el-table-column>
+      <el-table-column prop="configList" label="接口数据切换">
+        <template slot-scope="scope">
+          <el-form>
+            <div v-for="(configItem, configItemKey) in scope.row.configList" :label="configItemKey">
+              <el-form-item :label="configItemKey">
+                <el-checkbox-group v-model="checkboxType[scope.row.url + configItemKey]" v-if="configItem instanceof Array" @change="changeHandle(scope.row.url, configItemKey, checkboxType[scope.row.url + configItemKey])">
+                  <el-checkbox v-for="item in configItem" :label="item|getItemName" name="item"></el-checkbox>
+                </el-checkbox-group>
+                <el-input v-else-if="typeof configItem === 'string'" v-model="valueType[scope.row.url + configItemKey]" @change="changeHandle(scope.row.url, configItemKey, valueType[scope.row.url + configItemKey])" style="width:300px"></el-input>
+                <el-radio-group v-model="radioType[scope.row.url + configItemKey]" v-else @change="changeHandle(scope.row.url, configItemKey, radioType[scope.row.url + configItemKey])">
+                  <el-radio v-for="(item, radioKey) in configItem" :label="radioKey"></el-radio>
+                </el-checkbox-group>
+              </el-form-item>
+            </div>
+          </el-form>
+        </template>
+      </el-table-column>
+    </el-table>
   </div>
   <script src="./static/axios.js"></script>
   <script src="./static/vue.js"></script>
@@ -93,8 +90,8 @@
 
         return {
           ruleForm: {
-            agentUrl: '', // https://global-devjd.epay.163.com
-            agentHeaders: '', // { "Cookie": "JSESSIONID=A4C1A5F2F73E186DAC432BB78113C3FA;" }
+            agentUrl: '',
+            agentHeaders: '',
             useAgent: false,
           },
           urlConfigList: [],
@@ -111,7 +108,7 @@
               trigger: 'blur',
               validator: agentHeadersValidator
             }]
-          }
+          },
         }
       },
       filters: {
@@ -139,7 +136,11 @@
         this.initPageData()
       },
       methods: {
+        updatePage() {
+          this.initPageData()
+        },
         initPageData() {
+          this.getConfig()
           window.axios.post('/mock-switch/list').then(res => {
             res.data.forEach(item => {
               const listObj = item.configList
@@ -179,6 +180,22 @@
             url,
             key,
             value,
+          })
+        },
+        getConfig() {
+          window.axios.post('/mock-switch/config').then(res => {
+            const { proxyUrlList, proxyParamsList, agent } = res.data
+            Object.assign(this.ruleForm, {
+              agentUrl: agent.agentUrl,
+              agentHeaders: agent.agentHeaders,
+              useAgent: agent.useAgent,
+            })
+            proxyUrlList.forEach(item => {
+              this.setSearchResult('useAgentQuerySearchResult', item)
+            })
+            proxyParamsList.forEach(item => {
+              this.setSearchResult('agentHeadersQuerySearchResult', JSON.stringify(item))
+            })
           })
         },
         useAgentEvent() {
@@ -231,6 +248,24 @@
       }
     })
   </script>
+  <style>
+    h3 {
+      padding: 0;
+      margin: 0;
+    }
+    .page-layout {
+      padding: 10px 20px 50px 20px;
+    }
+    .self-column {
+      width: 400px;
+    }
+    .self-column-params {
+      width: 500px;
+    }
+    .el-table__row .el-form-item {
+      margin-bottom: 0px;
+    }
+  </style>
 </body>
 
 </html>
