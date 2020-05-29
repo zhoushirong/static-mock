@@ -33,7 +33,7 @@ module.exports = async function(ctx, agentUrl, agentHeaders) {
     method: method,
     uri: url,
     gzip: true,
-    body: JSON.stringify(params),
+    body: Array.isArray(body) ? JSON.stringify(body) : JSON.stringify(params),
     headers,
   })
   if (files) {
