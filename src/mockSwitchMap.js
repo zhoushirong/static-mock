@@ -32,7 +32,7 @@ module.exports = function (_config) {
       // console.log(e)
     }
     return {
-      url: item.replace(config.apiPath, '').replace('.js', ''),
+      url: item.replace(config.apiPath, '').replace(/\\/g, '/').replace('.js', ''),
       configList
     }
   }).filter(item => item.configList)
