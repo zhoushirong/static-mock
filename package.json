@@ -1,6 +1,6 @@
 {
   "name": "static-mock",
-  "version": "1.1.21",
+  "version": "1.1.22",
   "description": "static mock server",
   "main": "./src/index.js",
   "scripts": {
